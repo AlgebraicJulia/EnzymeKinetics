@@ -4,6 +4,12 @@ function split(cat,prod1,prod2,on::T) where T
   Open(LabelledReactionNet{T,Number}(unique((in=>0, cat,prod1,prod2)), ((Symbol(:split_,in),on),in=>(first(cat),first(prod1),first(prod2)))));
 end;
 
+# Beginning of a multisplit motif. Not sure if needed.
+function multisplit(enzs,prods,on::T) where T
+  in = Symbol(first(cat), sep_sym,first(prod1), sep_sym,first(prod2))
+  Open(LabelledReactionNet{T,Number}(unique((in=>0, cat,prod1,prod2)), ((Symbol(:split_,in),on),in=>(first(cat),first(prod1),first(prod2)))));
+end;
+
 function split(cat,prod1,prod2)
   in = Symbol(cat, sep_sym,prod1, sep_sym,prod2)
   Open(LabelledPetriNet(unique((in, cat,prod1,prod2)), (Symbol(:split_,in),in=>(cat,prod1,prod2))));
@@ -14,36 +20,47 @@ enzXsubYZ = @relation (X, Xinact, Xdeg, YZ, Y, Z) where (X, Xinact, Xdeg, YZ, XY
   splitXYZ(XYZ, X, Y, Z)
 end
 
-
-function enz_sub(rxns, cat1, sub)
+# TODO:
+# 1. Currently assumes the structures/concentrations are initialize for the end products,
+#    rather the substrate that is split. Ie, YZ is set to zero.
+#    Change to have YZ first. Perhaps also determine Y and Z from YZ
+# 2. Need to determine appropriate bundling of legs. These are original vects.
+function enz_sub2(rxns, cat1, sub1, sub2)
   catsym = first(cat1)
-  subsym = first(sub)
+  subsym1 = first(sub1)
+  subsym2 = first(sub2)
+  subsym = Symbol(subsym1, sep_sym, subsym2)
   catsub = Symbol(catsym, sep_sym, subsym)
   obtype = valtype(rates(apex(first(last(first(rxns))))))
-  out = oapply(enzXsubY, Dict([:bindXY, :degXY] .=> rxns[catsub]), Dict(
+  out = oapply(enzXsubYZ, Dict([:bindXYZ, :splitXYZ] .=> rxns[catsub]), Dict(
     :X=>ob(obtype, cat1),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
-    :Y=>ob(obtype, sub),
-    :XY=>ob(obtype, Symbol(catsym,sep_sym,subsym)=>0),
-    :Ydeg=>ob(obtype, Symbol(subsym,:_deg)=>0)))
+    :YZ=>ob(obtype, subsym=>0),
+    :XYZ=>ob(obtype, catsub=>0),
+    :Y=>ob(obtype, sub1),
+    :Z=>ob(obtype, sub2)))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
 
-function enz_sub(cat1::Symbol, sub::Symbol)
-  catsym = cat1
-  subsym = sub
+function enz_sub2(cat1::Symbol, sub1::Symbol, sub2::Symbol)
+  catsym = first(cat1)
+  subsym1 = first(sub1)
+  subsym2 = first(sub2)
+  subsym = Symbol(subsym1, sep_sym, subsym2)
   catsub = Symbol(catsym, sep_sym, subsym)
-  out = oapply(enzXsubY, Dict(:bindXY=>bindunbind(cat1, sub), :degXY=>degrade(cat1, sub)), Dict(
+  out = oapply(enzXsubYZ, Dict(:bindXYZ=>bindunbind(cat1, subsym), :splitXYZ=>split(cat1, sub1, sub2)), Dict(
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
-    :Y=>ob(sub),
-    :XY=>ob(Symbol(catsym, sep_sym,subsym)),
-    :Ydeg=>ob(Symbol(subsym,:_deg))))
+    :YZ=>ob(subsym),
+    :XYZ=>ob(catsub),
+    :Y=>ob(sub1),
+    :Z=>ob(sub2)))
   bundle_legs(out, [[1,2,3], [4,5]])
 end
 
+# Just old copy at moment. Not sure if needed. Could be used to set up multisplitting
 function enzyme_generators(enzymes::Array{Symbol}, substrates::Array{Symbol})
   gens = Dict{Symbol, Any}()
   for e1 in enzymes
