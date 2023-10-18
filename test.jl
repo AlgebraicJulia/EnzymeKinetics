@@ -57,6 +57,8 @@ function enz_sub2(cat1::Symbol, sub1::Symbol, sub2::Symbol)
 end
 =#
 
+sep_sym = "↦"
+
 function split2(cat,sub,site::Int,on::T) where T
   catsym = first(cat)
   subsym = first(sub)

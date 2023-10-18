@@ -1712,56 +1712,9 @@ begin
 LabelledReactionNet{Number, Number}(model, get_inds(def_concs, snames(model)), get_inds(m_rates, tnames(model))) |> AffinityNet |> to_graphviz
 end
 
-# ╔═╡ af67527a-758c-45bc-89b6-d120651ce3ba
-first("X_inact")
-
-# ╔═╡ 24ecb50e-1a2b-43b7-9c33-ef0107401481
-Symbol(:oop,:wow)
-
-# ╔═╡ 98a86f02-b415-4c14-96cb-a8d899842462
-(Symbol(:bind_,:oop,:wow),(:oop,:wow)=>Symbol(:oop,:wow))
-
-# ╔═╡ 09d8bcb9-6597-4ed1-abaf-26db6a2fbf3a
-Graph(LabelledPetriNet(unique((:w1, :w2,:w1w2)), (Symbol(:bind_,:w1,:w2),(:w1,:w2)=>:w1w2),
-                                                (Symbol(:unbind_,:w1w2),:w1w2=>(:w1,:w2))))
-
-# ╔═╡ 7a92d691-5905-4239-9aef-6bca485adf54
-enz(rxns, K)
-
-# ╔═╡ d4686133-42ee-41a1-b2c1-ae600dd43413
-test_val = valtype(rates(apex(first(last(first(rxns))))))
-
-# ╔═╡ 3c040566-8a56-4a95-86e2-e29f72cd392a
-apex(enz_sub(rxns, S,E))
-
-# ╔═╡ cc19625b-2a86-40db-baed-ed4a9a112823
-rxns[first(S)][2]
-
-# ╔═╡ e69c0701-0310-4067-95a2-83457dcc4e55
-sep_sym = "↦"
-
-# ╔═╡ 824038b8-5039-4023-9946-34a09127ac93
-test = oapply(enzX, Dict([:inactX, :bindXX, :degXX, :bindXXinact, :degXXinact] .=> 	rxns[first(S)]), Dict(
-    :X=>ob(test_val, S),
-    :Xinact=>ob(test_val, Symbol(first(S),:_inact)=>0),
-    :Xdeg=>ob(test_val, Symbol(first(S),:_deg)=>0),
-    :XX=>ob(test_val, Symbol(first(S),sep_sym,first(S))=>0),
-    :XXinact=>ob(test_val, Symbol(first(S),sep_sym,first(S),:_inact)=>0)))
-
-# ╔═╡ 1dc5d72c-49d6-4199-a5bf-86e773ec4717
-apex(bundle_legs(test,[[1,2,3]]))
-
-# ╔═╡ e8d9b891-b386-4d4a-ad7f-733014fe1e8e
-Dict([:inactX, :bindXX, :degXX, :bindXXinact, :degXXinact] .=> rxns[first(K)])
-
-# ╔═╡ 823b87e5-0228-4927-829d-b1f8b1ce8369
-length(keys(enzyme_generators([:K,:S,:L],[:G,:E,:Spike])))
-
-# ╔═╡ 612b5e1a-510e-4362-acdc-2d7e17bff6fc
-enzyme_uwd([:K,:S,:L],[:G,:E])
-
 # ╔═╡ e4100b5b-b255-48db-a989-016fa72f8da5
 begin
+sep_sym = "↦"
 	
 function split2(cat,sub,site::Int,on::T) where T
   catsym = first(cat)
@@ -1984,30 +1937,30 @@ begin
   rxns2 = Dict(Symbol(k)=>v for (k,v) in rxns2)
   # define labels to reaction network mappings
   functor2(x) = oapply(x, Dict(
-    # :catK=>enz(rxns2, K),
+    :catK=>enz(rxns2, K),
     # :catS=>enz(rxns2, S),
     :catL=>enz(rxns2, L),
     # :catKcatS=>enz_enz(rxns2, K,S),
-    # :catKcatL=>enz_enz(rxns2, K,L),
+    :catKcatL=>enz_enz(rxns2, K,L),
     # :catScatK=>enz_enz(rxns2, S,K),
     # :catScatL=>enz_enz(rxns2, S,L),
-    # :catLcatK=>enz_enz(rxns2, L,K),
+    :catLcatK=>enz_enz(rxns2, L,K),
     # :catLcatS=>enz_enz(rxns2, L,S),
     # :catK1subABC=>enz_sub_split(rxns2, K,ABC,1),
     # :catK2subABC=>enz_sub_split(rxns2, K,ABC,2),
     # :catS1subABC=>enz_sub_split(rxns2, S,ABC,1),
     # :catS2subABC=>enz_sub_split(rxns2, S,ABC,2),
-    :catL1subABC=>enz_sub_split(rxns2, L,ABC,1),
-    :catL2subABC=>enz_sub_split(rxns2, L,ABC,2),
-    # :catK1subAB=>enz_sub_split(rxns2, K,AB,1),
+    # :catL1subABC=>enz_sub_split(rxns2, L,ABC,1),
+    # :catL2subABC=>enz_sub_split(rxns2, L,ABC,2),
+    :catK1subAB=>enz_sub_split(rxns2, K,AB,1),
     # :catS1subAB=>enz_sub_split(rxns2, S,AB,1),
     :catL1subAB=>enz_sub_split(rxns2, L,AB,1),
-    # :catK1subBC=>enz_sub_split(rxns2, K,BC,1),
+    :catK1subBC=>enz_sub_split(rxns2, K,BC,1),
 	# :catS1subBC=>enz_sub_split(rxns2, S,BC,1),
 	:catL1subBC=>enz_sub_split(rxns2, L,BC,1)
 	));
   lfunctor2(x) = oapply(x, multisplit_generators(:K,:ABC))
-  def_model2 = apex(functor2(multisplit_uwd([:L],:ABC)))
+  def_model2 = apex(functor2(multisplit_uwd([:K,:L],:BC)))
   def_rates2 = rates(def_model2)
   def_concs2 = Dict(c=>concentrations(def_model2)[c] for c in snames(def_model2))
   def_concs2[:Spike] = Spike[2]
@@ -2019,25 +1972,10 @@ begin
 end
 
 # ╔═╡ ecdc5f61-6041-42ef-819c-1d83c062c8e3
-Graph(bindunbind_multisite(:K,:ABCDE,2))
+Graph(def_model2)
 
-# ╔═╡ 322ebc57-c147-4af4-b9c1-059d54044eec
-functor2(multisplit_uwd([:L],:AB))
-
-# ╔═╡ 46c651a2-af50-4729-84ed-9639eaf9a024
-multisplit_generators(:K,:ABC)
-
-# ╔═╡ 5b309c07-9ae9-4e55-9818-f9b5e8e911bc
-keys(rxns2)
-
-# ╔═╡ c273386c-9b0d-49fe-b6de-d8defd3174fd
-display_uwd(multisplit_uwd([:K], :ABC))
-
-# ╔═╡ 77117802-6702-44f3-bc28-fafae0cca408
-enzyme_uwd([:K,:L],[:G,:E])
-
-# ╔═╡ 2f0f63ea-b1ad-45d3-952f-abec98ef48d0
-functor(enzyme_uwd([:K],[:G,:E]))
+# ╔═╡ d86c2b39-5a79-41b4-b8be-a4ee7cd44b75
+multisplit_uwd([:K,:L],:ABC)
 
 # ╔═╡ Cell order:
 # ╠═4c9c24cc-b865-4825-a841-f717120d27d2
@@ -2057,7 +1995,7 @@ functor(enzyme_uwd([:K],[:G,:E]))
 # ╟─4ad16c5c-73bc-4e42-9bfc-aea73a6bfbfe
 # ╟─e89794b1-5bcd-4b6c-9cb2-77deca569c2e
 # ╟─dcdb88ef-f04f-4ee8-87cc-bb26f396f064
-# ╠═d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
+# ╟─d9f5de8a-f3a2-41c9-9f3c-a0c8347368a4
 # ╠═e6589d31-dce7-42c3-b494-db03fe561ae9
 # ╠═7dbe9349-8b9e-4ac2-b4bf-b59f58a10ebc
 # ╟─cf9e03db-42b7-41f6-80ce-4b12ddb93211
@@ -2078,26 +2016,7 @@ functor(enzyme_uwd([:K],[:G,:E]))
 # ╟─afea37f1-70c2-4aae-94f6-34cf7c1d9f8e
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
-# ╠═af67527a-758c-45bc-89b6-d120651ce3ba
-# ╠═24ecb50e-1a2b-43b7-9c33-ef0107401481
-# ╠═98a86f02-b415-4c14-96cb-a8d899842462
-# ╠═09d8bcb9-6597-4ed1-abaf-26db6a2fbf3a
-# ╠═7a92d691-5905-4239-9aef-6bca485adf54
-# ╠═d4686133-42ee-41a1-b2c1-ae600dd43413
-# ╠═3c040566-8a56-4a95-86e2-e29f72cd392a
-# ╠═cc19625b-2a86-40db-baed-ed4a9a112823
-# ╠═e69c0701-0310-4067-95a2-83457dcc4e55
-# ╠═824038b8-5039-4023-9946-34a09127ac93
-# ╠═1dc5d72c-49d6-4199-a5bf-86e773ec4717
-# ╠═e8d9b891-b386-4d4a-ad7f-733014fe1e8e
-# ╠═823b87e5-0228-4927-829d-b1f8b1ce8369
-# ╠═612b5e1a-510e-4362-acdc-2d7e17bff6fc
 # ╠═e4100b5b-b255-48db-a989-016fa72f8da5
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
-# ╠═322ebc57-c147-4af4-b9c1-059d54044eec
-# ╠═46c651a2-af50-4729-84ed-9639eaf9a024
-# ╠═5b309c07-9ae9-4e55-9818-f9b5e8e911bc
-# ╠═c273386c-9b0d-49fe-b6de-d8defd3174fd
-# ╠═77117802-6702-44f3-bc28-fafae0cca408
-# ╠═2f0f63ea-b1ad-45d3-952f-abec98ef48d0
+# ╠═d86c2b39-5a79-41b4-b8be-a4ee7cd44b75
