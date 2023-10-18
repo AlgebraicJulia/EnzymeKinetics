@@ -104,7 +104,7 @@ function enz_sub_split(rxns, cat1, sub, site)
     :X=>ob(obtype, cat1),
     :Xinact=>ob(obtype, Symbol(catsym,:_inact)=>0),
     :Xdeg=>ob(obtype, Symbol(catsym,:_deg)=>0),
-    :YZ=>ob(obtype, subsym),
+    :YZ=>ob(obtype, sub),
     :XYZ=>ob(obtype, catsub=>0),
     :Y=>ob(obtype, frag1sym=>0),
     :Z=>ob(obtype, frag2sym=>0)))
@@ -123,7 +123,7 @@ function enz_sub_split(cat1::Symbol, sub::Symbol, site)
     :X=>ob(cat1),
     :Xinact=>ob(Symbol(catsym,:_inact)),
     :Xdeg=>ob(Symbol(catsym,:_deg)),
-    :YZ=>ob(subsym),
+    :YZ=>ob(sub),
     :XYZ=>ob(catsub),
     :Y=>ob(frag1sym),
     :Z=>ob(frag2sym)))
@@ -146,8 +146,61 @@ function multisplit_generators(enzyme::Symbol, molecule::Symbol)
   gens
 end
 
+function gen_fragments(substrate::Symbol)
+  frags = [substrate]
+  for ii in 1:(length(String(substrate))-1)
+    frag1 = Symbol(String(substrate)[1:ii])
+    frag2 = Symbol(String(substrate)[ii+1:end])
+    if ii != 1
+      append!(frags,gen_fragments(frag1))
+    end
+    if ii != length(String(substrate))-1
+      append!(frags,gen_fragments(frag2))
+    end
+  end
+  frags
+end
+
+function multisplit_uwd(enzymes::Array{Symbol}, substrate::Symbol) 
+  rel = RelationDiagram{Symbol}(0)
+
+  substrates = gen_fragments(substrate)
+  chemicals = vcat(substrates, enzymes)
+
+  subs = add_junctions!(rel, length(substrates), variable=substrates)
+  enzs = add_junctions!(rel, length(enzymes), variable=enzymes)
+  nsubs = length(subs)
+  nenzs = length(enzs)
+
+  catx = add_parts!(rel, :Box, nenzs, name=[Symbol("cat$i") for i in enzymes])
+  add_parts!(rel, :Port, nenzs, junction=enzs, box=catx)
+
+  for x in 1:nenzs
+    for y in 1:nenzs
+      if y != x
+        catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])cat$(enzymes[y])"))
+        add_parts!(rel, :Port, 2, junction=[enzs[x], enzs[y]], box=catxy)
+      end
+    end
+  end
+
+  for x in 1:nenzs
+    for y in 1:nsubs
+      for n in 1:(length(String(substrates[y]))-1)
+        catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])$(n)sub$(substrates[y])"))
+        add_parts!(rel, :Port, 2, junction=[enzs[x], subs[y]], box=catxy)
+      end
+    end
+  end
+  add_parts!(rel, :OuterPort, length(chemicals), outer_junction = vcat(subs, enzs))
+  rel
+end
+
+
+
+
 # CURRENTLY JUST A COPY OF enzyme_uwd
-function multisplit_uwd(enzymes::Array{Symbol}, substrates::Array{Symbol})
+function multisplit_uwd(enzymes::Array{Symbol}, substrates::Array{Symbol}) # , sites::Vector{Vector{Int}}
   rel = RelationDiagram{Symbol}(0)
 
   chemicals = vcat(substrates, enzymes)
