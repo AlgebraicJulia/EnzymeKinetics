@@ -110,7 +110,7 @@ function enz_sub_split(rxns, cat1, sub, site)
     :XYZ=>ob(obtype, catsub=>0),
     :Y=>ob(obtype, frag1sym=>0),
     :Z=>ob(obtype, frag2sym=>0)))
-  bundle_legs(out, [[1,2,3], [4,5]])
+  bundle_legs(out, [[1,2,3], [4],[5],[6]])
 end
 
 function enz_sub_split(cat1::Symbol, sub::Symbol, site)
@@ -129,7 +129,7 @@ function enz_sub_split(cat1::Symbol, sub::Symbol, site)
     :XYZ=>ob(catsub),
     :Y=>ob(frag1sym),
     :Z=>ob(frag2sym)))
-  bundle_legs(out, [[1,2,3], [4,5]])
+  bundle_legs(out, [[1,2,3], [4],[5],[6]])
 end
 
 function multisplit_generators(enzyme::Symbol, molecule::Symbol)

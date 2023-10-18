@@ -1767,7 +1767,8 @@ function enz_sub_split(rxns, cat1, sub, site)
     :Y=>ob(obtype, frag1sym=>0),
     :Z=>ob(obtype, frag2sym=>0)))
   println(sub," ",length(legs(out)))
-  bundle_legs(out, [[1,2,3], [4,5]])
+	# bundle_legs(out, [[1,2,3], [4,5]])
+	bundle_legs(out, [[1,2,3],[4],[5],[6]])
 end;
 
 function enz_sub_split(cat1::Symbol, sub::Symbol, site)
@@ -1786,7 +1787,8 @@ function enz_sub_split(cat1::Symbol, sub::Symbol, site)
     :XYZ=>ob(catsub),
     :Y=>ob(frag1sym),
     :Z=>ob(frag2sym)))
-  bundle_legs(out, [[1,2,3], [4,5]])
+  # bundle_legs(out, [[1,2,3], [4,5]])
+  bundle_legs(out, [[1,2,3],[4],[5],[6]])
 end;
 
 function multisplit_generators(enzyme::Symbol, molecule::Symbol)
@@ -1946,12 +1948,12 @@ begin
     # :catScatL=>enz_enz(rxns2, S,L),
     :catLcatK=>enz_enz(rxns2, L,K),
     # :catLcatS=>enz_enz(rxns2, L,S),
-    # :catK1subABC=>enz_sub_split(rxns2, K,ABC,1),
-    # :catK2subABC=>enz_sub_split(rxns2, K,ABC,2),
+    :catK1subABC=>enz_sub_split(rxns2, K,ABC,1),
+    :catK2subABC=>enz_sub_split(rxns2, K,ABC,2),
     # :catS1subABC=>enz_sub_split(rxns2, S,ABC,1),
     # :catS2subABC=>enz_sub_split(rxns2, S,ABC,2),
-    # :catL1subABC=>enz_sub_split(rxns2, L,ABC,1),
-    # :catL2subABC=>enz_sub_split(rxns2, L,ABC,2),
+    :catL1subABC=>enz_sub_split(rxns2, L,ABC,1),
+    :catL2subABC=>enz_sub_split(rxns2, L,ABC,2),
     :catK1subAB=>enz_sub_split(rxns2, K,AB,1),
     # :catS1subAB=>enz_sub_split(rxns2, S,AB,1),
     :catL1subAB=>enz_sub_split(rxns2, L,AB,1),
@@ -1960,7 +1962,7 @@ begin
 	:catL1subBC=>enz_sub_split(rxns2, L,BC,1)
 	));
   lfunctor2(x) = oapply(x, multisplit_generators(:K,:ABC))
-  def_model2 = apex(functor2(multisplit_uwd([:K,:L],:BC)))
+  def_model2 = apex(functor2(multisplit_uwd([:K],:ABC)))
   def_rates2 = rates(def_model2)
   def_concs2 = Dict(c=>concentrations(def_model2)[c] for c in snames(def_model2))
   def_concs2[:Spike] = Spike[2]
@@ -1970,6 +1972,9 @@ begin
   def_concs2[Symbol("L↦Spike")] = 0
   nothing
 end
+
+# ╔═╡ e1e13874-b3df-441e-b4f8-45c2bc310376
+apex(enz_sub_split(rxns2, K,ABC,1))
 
 # ╔═╡ ecdc5f61-6041-42ef-819c-1d83c062c8e3
 Graph(def_model2)
@@ -2017,6 +2022,7 @@ multisplit_uwd([:K,:L],:ABC)
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
 # ╠═e4100b5b-b255-48db-a989-016fa72f8da5
+# ╠═e1e13874-b3df-441e-b4f8-45c2bc310376
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
 # ╠═d86c2b39-5a79-41b4-b8be-a4ee7cd44b75
