@@ -1795,7 +1795,7 @@ function multisplit_generators(enzyme::Symbol, molecule::Symbol)
   gens = Dict{Symbol, Any}()
   # println((length(String(molecule))-1))
   for ii in 1:(length(String(molecule))-1)
-    gens[Symbol(:cat, enzyme, ii, sep_sym, :sub, molecule)] = enz_sub_split(enzyme, molecule, ii)  
+    gens[Symbol(:cat, enzyme, ii, :sub, molecule)] = enz_sub_split(enzyme, molecule, ii)  
     frag1 = Symbol(String(molecule)[1:ii])
     frag2 = Symbol(String(molecule)[ii+1:end])
 	# println(enzyme," ",frag1," ",frag2)
@@ -1809,6 +1809,21 @@ function multisplit_generators(enzyme::Symbol, molecule::Symbol)
   gens
 end;
 
+function multisplit_generators(enzymes::Array{Symbol}, molecule::Symbol)
+  gens = Dict{Symbol, Any}()
+  for enzyme1 in enzymes
+    merge!(gens,multisplit_generators(enzyme1, molecule))
+    for enzyme2 in enzymes
+      if enzyme1==enzyme2
+        gens[Symbol(:cat,enzyme1)] = enz(enzyme1)  
+      else
+        gens[Symbol(:cat,enzyme1,:cat,enzyme2)] = enz_enz(enzyme1,enzyme2)
+      end
+    end  
+  end
+  gens
+end;
+	
 function gen_fragments(substrate::Symbol)
   frags = [substrate]
   for ii in 1:(length(String(substrate))-1)
@@ -1961,8 +1976,8 @@ begin
 	# :catS1subBC=>enz_sub_split(rxns2, S,BC,1),
 	:catL1subBC=>enz_sub_split(rxns2, L,BC,1)
 	));
-  lfunctor2(x) = oapply(x, multisplit_generators(:K,:ABC))
-  def_model2 = apex(functor2(multisplit_uwd([:K],:ABC)))
+  lfunctor2(x) = oapply(x, multisplit_generators([:K,:L],:ABC))
+  def_model2 = apex(functor2(multisplit_uwd([:K,:L],:ABC)))
   def_rates2 = rates(def_model2)
   def_concs2 = Dict(c=>concentrations(def_model2)[c] for c in snames(def_model2))
   def_concs2[:Spike] = Spike[2]
@@ -1973,14 +1988,11 @@ begin
   nothing
 end
 
-# ╔═╡ e1e13874-b3df-441e-b4f8-45c2bc310376
-apex(enz_sub_split(rxns2, K,ABC,1))
-
 # ╔═╡ ecdc5f61-6041-42ef-819c-1d83c062c8e3
 Graph(def_model2)
 
-# ╔═╡ d86c2b39-5a79-41b4-b8be-a4ee7cd44b75
-multisplit_uwd([:K,:L],:ABC)
+# ╔═╡ 7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
+multisplit_uwd([:K,:L], :ABC) |> lfunctor2 |> apex |> Graph
 
 # ╔═╡ Cell order:
 # ╠═4c9c24cc-b865-4825-a841-f717120d27d2
@@ -2022,7 +2034,6 @@ multisplit_uwd([:K,:L],:ABC)
 # ╟─ad8edd69-c164-4221-bdee-e7c9381ffcab
 # ╟─9625798a-67df-49e4-91ce-c7e23ed2a177
 # ╠═e4100b5b-b255-48db-a989-016fa72f8da5
-# ╠═e1e13874-b3df-441e-b4f8-45c2bc310376
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
-# ╠═d86c2b39-5a79-41b4-b8be-a4ee7cd44b75
+# ╠═7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
