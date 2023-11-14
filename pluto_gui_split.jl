@@ -726,13 +726,13 @@ function bundle_end_products(pn::T) where T <: AbstractPetriNet
 		if length(repeats[s])>1
 			tmp2 = incident(pn2,s,:sname)
 			for i in length(tmp2):-1:2
-				tmp = incident(pn2,tmp2[i],:is)
-				for j in 1:length(tmp)
-					set_subpart!(pn2,tmp[j],:is,tmp2[1])
+				tmp_a = incident(pn2,tmp2[i],:is)
+				for j in tmp_a
+					set_subpart!(pn2,j,:is,tmp2[1])
 				end
-				tmp = incident(pn2,tmp2[i],:os)
-				for j in 1:length(tmp)
-					set_subpart!(pn2,tmp[j],:os,tmp2[1])
+				tmp_b = incident(pn2,tmp2[i],:os)
+				for j in tmp_b
+					set_subpart!(pn2,j,:os,tmp2[1])
 				end
 				rem_part!(pn2,:S,tmp2[i])
 			end
@@ -858,8 +858,8 @@ ABC = :ABC=>66000;
 	:catS1subBC=>enz_sub_split(rxns, S,BC,1),
 	:catL1subBC=>enz_sub_split(rxns, L,BC,1)
 	));
-  lfunctor(x) = oapply(x, multisplit_generators([:K,:L],:ABC))
-  def_model = apex(functor(multisplit_uwd([:K,:L],:ABC)))
+  lfunctor(x) = oapply(x, multisplit_generators([:K,:L,:S],:ABC))
+  def_model = apex(functor(multisplit_uwd([:K,:L,:S],:ABC)))
   def_rates = rates(def_model)
   def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
   def_concs[:Spike] = Spike[2]
@@ -874,7 +874,7 @@ end
 Graph(def_model)
 
 # ╔═╡ 7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-multisplit_uwd([:K], :ABC) |> lfunctor |> apex |> bundle_end_products
+multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> Graph
 
 # ╔═╡ 41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
@@ -1317,6 +1317,9 @@ form.insertBefore(f,sp2)
 </script>
 """);
 end
+
+# ╔═╡ 3694f04c-7d0b-4d22-b730-c37fa5326422
+model
 
 # ╔═╡ 79064f4a-f4ad-4837-898a-d7a7e03f04da
 begin
@@ -2112,13 +2115,14 @@ gen_fragments(subs2[1])
 # ╠═553bce96-a29f-4a77-a193-8005914f4bfa
 # ╠═e5d3b132-baca-4cdb-aeb0-09272610ed6f
 # ╟─240a8494-158f-4db2-9d0d-c141b50dcd5d
-# ╟─48921b9a-d3fd-4d03-9170-a414797d8dee
+# ╠═48921b9a-d3fd-4d03-9170-a414797d8dee
 # ╟─693397a9-3c80-41e3-b618-fa9d5ecb42b7
 # ╠═d5a956d0-b443-4ee2-9045-14146012a435
 # ╠═2012c352-3bff-4c84-bc2e-d83b22d95349
 # ╠═6b819b32-3601-48cc-9ff4-1df3e88e8034
 # ╟─0858af84-9c5c-43b4-b5c9-fec1f1c4dba4
 # ╠═ab8a18b1-4975-4f4a-994b-b08773489baf
+# ╠═3694f04c-7d0b-4d22-b730-c37fa5326422
 # ╠═79064f4a-f4ad-4837-898a-d7a7e03f04da
 # ╠═31a3d715-4a80-4696-96c3-8e5152797f9f
 # ╠═7a4fbc79-9221-472f-acfa-d32249c8e828
