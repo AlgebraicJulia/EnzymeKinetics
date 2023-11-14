@@ -264,9 +264,6 @@ end
 # ╔═╡ db1cf041-8f29-4433-a8b7-da5ea4828d52
 Pkg.resolve()
 
-# ╔═╡ b41522af-368a-4fee-95cc-191aa3fea277
-
-
 # ╔═╡ 178e764e-e239-4689-bb2f-4993b7755724
 import .EnzymeReactions: ob, ode,
 		   inactivate, bindunbind, degrade,
@@ -569,7 +566,7 @@ function enz_sub_split(rxns, cat1, sub, site)
     :XYZ=>ob(obtype, catsub=>0),
     :Y=>ob(obtype, frag1sym=>0),
     :Z=>ob(obtype, frag2sym=>0)))
-  println(sub," ",length(legs(out)))
+  # println(sub," ",length(legs(out)))
 	# bundle_legs(out, [[1,2,3], [4,5]])
 	bundle_legs(out, [[1,2,3],[4],[5],[6]])
 end;
@@ -921,53 +918,6 @@ multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> bundle_end_products |> Grap
 
 # ╔═╡ 0f690572-29c0-4ad8-ad46-69fb88dcb4da
 multisplit_uwd([:K], [:ABC, :XYZ]) |> display_uwd
-
-# ╔═╡ f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
-function bundle_end_products2(pn::T) where T <: AbstractPetriNet
-	pn2 = deepcopy(pn)
-	repeats = Dict()
-	for (i, s) in enumerate(snames(pn))
-		if s ∉ keys(repeats)
-			repeats[s] = [i]
-		else
-			push!(repeats[s],i)
-		end
-	end
-	for s in keys(repeats)
-		println(s)
-		if length(repeats[s])>1
-			tmp2 = incident(pn2,s,:sname)
-			num_incs = [length(incident(pn2,x,:is)) for x in tmp2]
-			println(num_incs)
-			any(num_incs.>0) ? idx=findfirst(num_incs.>0) : idx=1
-			println(" ",tmp2," | ",idx)
-			for i in length(tmp2):-1:1
-				if i ≠ idx
-					tmp_a = incident(pn2,tmp2[i],:is)
-					for j in tmp_a
-						println("  ",j)
-						set_subpart!(pn2,j,:is,tmp2[idx])
-					end
-					println("  --")
-					tmp_b = incident(pn2,tmp2[i],:os)
-					for j in tmp_b
-						println("  ",j," ",tmp2[idx])
-						set_subpart!(pn2,j,:os,tmp2[idx])
-					end
-					println("  BOOO")
-				end
-				println(tmp2[i])
-			end
-			for i in length(tmp2):-1:1
-				if i ≠ idx
-					rem_part!(pn2,:S,tmp2[i])
-				end
-			end
-			println(" ",incident(pn2,s,:sname))
-		end
-	end
-	pn2
-end;
 
 # ╔═╡ 41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
@@ -1416,9 +1366,6 @@ form.insertBefore(f,sp2)
 """);
 end
 
-# ╔═╡ 3694f04c-7d0b-4d22-b730-c37fa5326422
-model
-
 # ╔═╡ 79064f4a-f4ad-4837-898a-d7a7e03f04da
 begin
 cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(model)))
@@ -1440,9 +1387,6 @@ cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(
 sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
-
-# ╔═╡ 07a47e3b-1b74-40fe-b162-48e9920bf98c
-length(cur_conc)
 
 # ╔═╡ 31a3d715-4a80-4696-96c3-8e5152797f9f
 md"""### Iterate over multiple species concentrations $(@bind multCheck CheckBox(false))
@@ -2191,17 +2135,10 @@ begin
 LabelledReactionNet{Number, Number}(model, get_inds2(def_concs, snames(model)), get_inds2(m_rates, tnames(model))) |> AffinityNet |> to_graphviz
 end
 
-# ╔═╡ ca18c7c8-6c58-4bd5-a92b-ed044c012603
-valid_enz_sub
-
-# ╔═╡ bced5a4c-9e43-4910-b233-738675a0f887
-gen_fragments(subs2[1])
-
 # ╔═╡ Cell order:
 # ╠═4c9c24cc-b865-4825-a841-f717120d27d2
 # ╠═db1cf041-8f29-4433-a8b7-da5ea4828d52
 # ╠═32c8703f-6aa3-46be-a91b-ff36225d6bd8
-# ╠═b41522af-368a-4fee-95cc-191aa3fea277
 # ╠═178e764e-e239-4689-bb2f-4993b7755724
 # ╠═563cf0a2-80e0-4bc2-8f6f-6a47cb2112af
 # ╠═2d89b8e5-31a0-402c-b95c-87494a5a1317
@@ -2213,36 +2150,31 @@ gen_fragments(subs2[1])
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
 # ╠═7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
 # ╠═0f690572-29c0-4ad8-ad46-69fb88dcb4da
-# ╠═f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
-# ╠═41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
-# ╠═553bce96-a29f-4a77-a193-8005914f4bfa
-# ╠═e5d3b132-baca-4cdb-aeb0-09272610ed6f
+# ╟─41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
+# ╟─553bce96-a29f-4a77-a193-8005914f4bfa
+# ╟─e5d3b132-baca-4cdb-aeb0-09272610ed6f
 # ╟─240a8494-158f-4db2-9d0d-c141b50dcd5d
-# ╠═48921b9a-d3fd-4d03-9170-a414797d8dee
+# ╟─48921b9a-d3fd-4d03-9170-a414797d8dee
 # ╟─693397a9-3c80-41e3-b618-fa9d5ecb42b7
-# ╠═d5a956d0-b443-4ee2-9045-14146012a435
-# ╠═2012c352-3bff-4c84-bc2e-d83b22d95349
-# ╠═6b819b32-3601-48cc-9ff4-1df3e88e8034
+# ╟─d5a956d0-b443-4ee2-9045-14146012a435
+# ╟─2012c352-3bff-4c84-bc2e-d83b22d95349
+# ╟─6b819b32-3601-48cc-9ff4-1df3e88e8034
 # ╟─0858af84-9c5c-43b4-b5c9-fec1f1c4dba4
-# ╠═ab8a18b1-4975-4f4a-994b-b08773489baf
-# ╠═3694f04c-7d0b-4d22-b730-c37fa5326422
-# ╠═07a47e3b-1b74-40fe-b162-48e9920bf98c
-# ╠═79064f4a-f4ad-4837-898a-d7a7e03f04da
-# ╠═31a3d715-4a80-4696-96c3-8e5152797f9f
-# ╠═7a4fbc79-9221-472f-acfa-d32249c8e828
-# ╠═59ed7708-3c09-431e-8a09-1e94b0b90e2a
-# ╠═cf516855-40fa-44d0-8d63-c145ef4577d0
-# ╠═6734cf5a-a3dc-4de3-9f33-45e149a27ebc
-# ╠═d9a98759-e596-4c81-98f5-2d4efdc964f6
-# ╠═20c7902d-ebbf-49d1-a103-fb7524489524
+# ╟─ab8a18b1-4975-4f4a-994b-b08773489baf
+# ╟─79064f4a-f4ad-4837-898a-d7a7e03f04da
+# ╟─31a3d715-4a80-4696-96c3-8e5152797f9f
+# ╟─7a4fbc79-9221-472f-acfa-d32249c8e828
+# ╟─59ed7708-3c09-431e-8a09-1e94b0b90e2a
+# ╟─cf516855-40fa-44d0-8d63-c145ef4577d0
+# ╟─6734cf5a-a3dc-4de3-9f33-45e149a27ebc
+# ╟─d9a98759-e596-4c81-98f5-2d4efdc964f6
+# ╟─20c7902d-ebbf-49d1-a103-fb7524489524
 # ╟─8c14d4a9-e2e7-4b18-bbba-a290872c2ca6
-# ╠═9db5401c-8501-45b5-8d8e-070afcdfd867
+# ╟─9db5401c-8501-45b5-8d8e-070afcdfd867
 # ╟─bf7ea880-5dff-419d-ba69-b4271b04bbe2
 # ╟─5dc80a12-9265-4e5d-92b3-be8883f65ee7
 # ╟─def4bd87-532b-4552-8229-620a27c04641
 # ╟─1b9fe2e0-6a17-4f6b-bb23-f371e261e86e
-# ╠═3eadc95c-b063-4ca6-ab5f-20acf5c56c2e
-# ╠═4886158c-8dca-4d70-9903-7287624983ef
-# ╠═33a0fc85-1069-4355-b2a6-6165f91d24e7
-# ╠═ca18c7c8-6c58-4bd5-a92b-ed044c012603
-# ╠═bced5a4c-9e43-4910-b233-738675a0f887
+# ╟─3eadc95c-b063-4ca6-ab5f-20acf5c56c2e
+# ╟─4886158c-8dca-4d70-9903-7287624983ef
+# ╟─33a0fc85-1069-4355-b2a6-6165f91d24e7
