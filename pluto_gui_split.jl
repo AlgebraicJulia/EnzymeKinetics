@@ -788,6 +788,8 @@ ABC = :ABC=>66000;
   BC = :BC=>0;
   A = :A=>0;
   B = :B=>0;
+  E1 = :E1=>700000;
+  G1 = :G1=>714000;
   subs2 = [:ABC]
 
   # Parameter Rates (units of pM and min)
@@ -831,6 +833,18 @@ ABC = :ABC=>66000;
             split2(S, AB, 1, 1.728e0)],
     "S1↦BC" => [bindunbind_multisite(S, BC, 1,9.668e-6,1.000e-2)
             split2(S, BC, 1, 1.728e0)],
+	"K1↦E1" => [bindunbind_multisite(K, E1, 1, 9.668e-6,1.000e-2)
+            split2(K, E1, 1, 1.728e0)],
+    "K1↦G1" => [bindunbind_multisite(K, G1, 1, 2.764e-6, 8.780e-1)
+            split2(K, G1, 1, 1.502e0)],
+    "S1↦E1" => [bindunbind_multisite(S, E1, 1, 4.197e-7, 1.06e-3)
+            split2(S, E1, 1, 1.384e4)],
+    "S1↦G1" => [bindunbind_multisite(S, G1, 1, 5.152e-8, 3.894e-3)
+            split2(S, G1, 1, 8.755e-1)],
+    "L1↦E1" => [bindunbind_multisite(L, E1, 1, 1.977e-8, 1.000e-2)
+            split2(L, E1, 1, 1.066e2)],
+    "L1↦G1" => [bindunbind_multisite(L, G1, 1, 3.394e-8, 2.365e1)
+            split2(L, G1, 1, 4.352e0)],
     "K↦S" => [bindunbind(K, S, 8.822e-4, 4.114e5)
             degrade(K, S, 9.000e-10)
             bindunbind(K, Sinact, 8.822e-4, 4.114e5)
@@ -879,8 +893,14 @@ ABC = :ABC=>66000;
     :catL1subAB=>enz_sub_split(rxns, L,AB,1),
     :catK1subBC=>enz_sub_split(rxns, K,BC,1),
 	:catS1subBC=>enz_sub_split(rxns, S,BC,1),
-	:catL1subBC=>enz_sub_split(rxns, L,BC,1)
-	));
+	:catL1subBC=>enz_sub_split(rxns, L,BC,1),
+    :catK1subE1=>enz_sub_split(rxns, K,E1,1),
+    :catS1subE1=>enz_sub_split(rxns, S,E1,1),
+    :catL1subE1=>enz_sub_split(rxns, L,E1,1),
+    :catK1subG1=>enz_sub_split(rxns, K,G1,1),
+    :catS1subG1=>enz_sub_split(rxns, S,G1,1),
+    :catL1subG1=>enz_sub_split(rxns, L,G1,1)
+  ));
   lfunctor(x) = oapply(x, multisplit_generators([:K,:L,:S],:ABC))
   def_model = apex(functor(multisplit_uwd([:K,:L,:S],:ABC)))
   def_rates = rates(def_model)
@@ -900,7 +920,7 @@ Graph(def_model)
 multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> bundle_end_products |> Graph
 
 # ╔═╡ 0f690572-29c0-4ad8-ad46-69fb88dcb4da
-multisplit_uwd([:K], [:ABC, :XY]) |> lfunctor |> apex |> bundle_end_products
+multisplit_uwd([:K], [:ABC, :XYZ]) |> display_uwd
 
 # ╔═╡ f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
 function bundle_end_products2(pn::T) where T <: AbstractPetriNet
