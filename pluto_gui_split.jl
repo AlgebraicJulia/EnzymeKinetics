@@ -515,193 +515,6 @@ begin
 =#
 end
 
-# ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
-begin
-	function formatSymbArr(arr)
-		#Change string array to symbol
-		B = Array{Symbol}(undef, length(arr))
-		for i in 1:length(arr)
-			 B[i] = Symbol(arr[i])
-		end
-		return B
-	end
-
-
-	function formatStrArr(arr)
-		#Change symbol array to string
-		B = Array{String}(undef, length(arr))
-		for i in 1:length(arr)
-			 B[i] = string(arr[i])
-		end
-		return B
-
-	end
-
-	function combineConc(df)
-		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
-		cols = names(df)
-		# println(cols)
-		chems = Array{String}(undef, 0)
-		for i in 2:length(cols)
-
-			# letter = cols[i][1]
-			letter = split(cols[i],"↦")[1]
-			println(split(cols[i],"↦")[1])
-			append!(chems,[letter])
-		end
-		unique!(chems)
-		println(chems)
-		dff = DataFrame()
-		dff.timestamp = df[!,"timestamp"]
-		for i in 1:length(chems)
-			arr = zeros(length(dff.timestamp))
-			# println("new chem")
-			for j in 2:length(cols)
-				letter2 = split(cols[j],"↦")[1]
-				# if chems[i] == cols[j][1]
-				println(letter2)
-				if chems[i] == letter2
-					# println("arr before: ",arr[10] )
-					# println("Value added: ", df[10,cols[j]])
-					arr = arr .+ df[!,cols[j]]
-					# println("arr after: ",arr[10] )
-
-				end
-			end
-
-			colname = string(chems[i])
-
-			dff[!,colname] = arr
-		end
-
-		return dff
-	end
-	
-	
-		function combineConcNoDeg(df)
-		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
-		cols = names(df)
-		# println(cols)
-		chems = Array{String}(undef, 0)
-		for i in 2:length(cols)
-
-			# letter = cols[i][1]
-			letter = split(cols[i],"↦")[1]
-			# println(split(cols[i],"↦")[1])
-			if occursin("deg",letter) == false
-				append!(chems,[letter])
-			end
-		end
-		unique!(chems)
-		# println(chems)
-		dff = DataFrame()
-		dff.timestamp = df[!,"timestamp"]
-		for i in 1:length(chems)
-			arr = zeros(length(dff.timestamp))
-			# println("new chem")
-			for j in 2:length(cols)
-				letter2 = split(cols[j],"↦")[1]
-
-				if chems[i] == letter2
-					arr = arr .+ df[!,cols[j]]
-
-				end
-			end
-
-			colname = string(chems[i])
-
-			dff[!,colname] = arr
-		end
-
-		return dff
-	end
-	
-	
-	function logrange(x1, x2, n) 
-		B = Float64[] 
-		startLog = log10(parse(Float64,x1))
-		endLog = log10(parse(Float64,x2))
-		
-		logvals = range(startLog,endLog,length = n)
-		for i in logvals
-			append!(B,10.0^i)	
-		end
-		return B
-		# return (10^y for y in range(log10(parse(Float64,x1)), log10(parse(Float64,x2)), length=n))
-		
-	end
-	
-	function createMultiArr(cur_conc,conList,veg)
-		multiConcArr = []
-		
-		for i in 1:length(conList)
-			tempArr = copy(cur_conc)
-			println(tempArr)
-			item = conList[i]
-			println(item)
-			tempArr[Symbol(veg)] = item
-			println(tempArr)
-			append!(multiConcArr,[tempArr])
-		end
-		return multiConcArr
-	end
-	
-	function createPlot(sol, model,current_conc,n)
-		tsteps = sol.t
-		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-		name = string("Plot ",string(n)," init conc: ", string(current_conc))
-	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...),title = name, linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
-		
-	end
-	
-	function createPlotDF(sol,model,current_conc,n)
-			graphKeySymb2 = Symbol[]
-			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
-			
-			S_labels2 = formatStrArr(labels2)
-			prepend!(S_labels2,["timestamp"])
-			dfs2 = DataFrame(sol)
-			rename!(dfs2,S_labels2)
-			# names(dfs)[1][1]
-			# dff2 = combineConc(dfs2)
-			dff2 = combineConcNoDeg(dfs2)
-			labels_new2 = names(dff2)[2:end]
-			name = string("Plot ",string(n),", init conc: ", string(current_conc))
-			timesteps2 = dff2[!,"timestamp"]
-			dff2[!,2:end]
-			data2 = Matrix(dff2[!,2:end])/1e3
-			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), title = name, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
-		
-	end
-	
-	function generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
-		clrs = ["red" "blue" "green" "purple" "orange" "pink"]
-		mkrs = [:circle :cross :rect :diamond :utriangle :dtriangle ]
-		
-		#Format markers and colors correctly
-		clr_array = []
-		mkrs_array = []
-		for i in 1:nplots
-			for j in 1:numSpecs
-				append!(clr_array,[clrs[i]])
-				append!(mkrs_array,[mkrs[j]])
-			end
-		end
-		
-		clr_array = reshape(clr_array, (1,length(clr_array)))
-		mkrs_array = reshape(mkrs_array, (1,length(mkrs_array)))
-		# mkrs = mkrs[1:numSpecs]
-		# println(mkrs)
-		mat_data = Matrix(df_plot)
-		plotnames = names(df_plot)
-		plotlabel = reshape(plotnames, (1,length(plotnames)))
-		return plot(timestamps,mat_data, label = plotlabel, linecolor = clr_array, markershape = mkrs_array, markercolor = clr_array, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
-	end
-	
-end
-
-
-
 # ╔═╡ e4100b5b-b255-48db-a989-016fa72f8da5
 begin
 sep_sym = "↦"
@@ -863,10 +676,73 @@ function multisplit_uwd(enzymes::Array{Symbol}, substrate::Symbol)
   add_parts!(rel, :OuterPort, length(chemicals), outer_junction = vcat(subs, enzs))
   rel
 end;
+
+function multisplit_uwd2(enzymes::Array{Symbol}, substrate::Symbol) 
+  rel = RelationDiagram{Symbol}(0)
+
+  substrates = gen_fragments(substrate)
+  chemicals = vcat(substrates, enzymes)
+
+  subs = add_junctions!(rel, length(substrates), variable=substrates)
+  enzs = add_junctions!(rel, length(enzymes), variable=enzymes)
+  nsubs = length(subs)
+  nenzs = length(enzs)
+
+  catx = add_parts!(rel, :Box, nenzs, name=[Symbol("cat$i") for i in enzymes])
+  add_parts!(rel, :Port, nenzs, junction=enzs, box=catx)
+
+  for x in 1:nenzs
+    for y in 1:nenzs
+      if y != x
+        catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])cat$(enzymes[y])"))
+        add_parts!(rel, :Port, 2, junction=[enzs[x], enzs[y]], box=catxy)
+      end
+    end
+  end
+
+  for x in 1:nenzs
+    for y in 1:nsubs
+      for n in 1:(length(String(substrates[y]))-1)
+        catxy = add_part!(rel, :Box, name=Symbol("cat$(enzymes[x])$(n)sub$(substrates[y])"))
+        add_parts!(rel, :Port, 2, junction=[enzs[x], subs[y]], box=catxy)
+      end
+    end
+  end
+  add_parts!(rel, :OuterPort, length(chemicals), outer_junction = vcat(subs, enzs))
+  rel
 end
 
-# ╔═╡ 6b3cd7cf-a084-40e9-81fd-f908b1917e32
-apex(enz_sub_split(:K,:ABC,1) )
+function bundle_end_products(pn::T) where T <: AbstractPetriNet
+	pn2 = deepcopy(pn)
+	repeats = Dict()
+	for (i, s) in enumerate(snames(pn))
+		if s ∉ keys(repeats)
+			repeats[s] = [i]
+		else
+			push!(repeats[s],i)
+		end
+	end
+	for s in keys(repeats)
+		if length(repeats[s])>1
+			tmp2 = incident(pn2,s,:sname)
+			for i in length(tmp2):-1:2
+				tmp = incident(pn2,tmp2[i],:is)
+				for j in 1:length(tmp)
+					set_subpart!(pn2,tmp[j],:is,tmp2[1])
+				end
+				tmp = incident(pn2,tmp2[i],:os)
+				for j in 1:length(tmp)
+					set_subpart!(pn2,tmp[j],:os,tmp2[1])
+				end
+				rem_part!(pn2,:S,tmp2[i])
+			end
+		end
+	end
+	pn2
+end;
+	
+end
+
 
 # ╔═╡ ef14041a-9753-456d-a242-d08dc0328507
 begin
@@ -998,13 +874,7 @@ end
 Graph(def_model)
 
 # ╔═╡ 7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-multisplit_uwd([:K], :ABC) |> lfunctor |> apex |> Graph
-
-# ╔═╡ fc96f433-e81f-4602-a585-8c0ccd74769c
-gen_fragments(:ABC)
-
-# ╔═╡ 77892f7a-3409-4131-ae0e-ee95b6215cc2
-keys(multisplit_generators([:K], :ABC))
+multisplit_uwd([:K], :ABC) |> lfunctor |> apex |> bundle_end_products
 
 # ╔═╡ 41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
@@ -1121,7 +991,7 @@ end
 
 # ╔═╡ ab8a18b1-4975-4f4a-994b-b08773489baf
 begin 
-model = uwd |> lfunctor |> apex;
+model = uwd |> lfunctor |> apex |> bundle_end_products;
   r = join(["'$k': $(m_rates[k])" for k in tnames(model)], ", ");
 
   r2 = join(["'$k': $(def_concs[k])" for k in snames(model)], ", ");
@@ -1448,15 +1318,6 @@ form.insertBefore(f,sp2)
 """);
 end
 
-# ╔═╡ ea6c1852-0eb3-401b-96fd-f727af953594
-println(tnames(model))
-
-# ╔═╡ d29ef49b-f56d-4f2d-a2ce-a9eef55644a7
-length(snames(model))
-
-# ╔═╡ 68923144-2495-40a4-af60-b2ef4f4d0e8f
-length(c)
-
 # ╔═╡ 79064f4a-f4ad-4837-898a-d7a7e03f04da
 begin
 cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(model)))
@@ -1479,18 +1340,6 @@ sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
 
-# ╔═╡ 8a9c6325-684c-48bf-8e4f-4022bc0a72da
-println(c)
-
-# ╔═╡ 59c43741-2566-438f-9c99-0134c408b11e
-length(["$(m_rates[k])" for k in tnames(model)])
-
-# ╔═╡ 8a00cfb5-0abf-4567-b4af-cf024fd17262
-length(["$(def_concs[k])" for k in snames(model)])
-
-# ╔═╡ aaff0de1-f0b0-4839-a8d5-0b7caeb6ef56
-println(vcat(["$(m_rates[k])" for k in tnames(model)], ["$(def_concs[k])" for k in snames(model)]))
-
 # ╔═╡ 31a3d715-4a80-4696-96c3-8e5152797f9f
 md"""### Iterate over multiple species concentrations $(@bind multCheck CheckBox(false))
 #### Select species to iterate: 
@@ -1506,73 +1355,13 @@ Use constant scale for axis? $(@bind scaleCheck CheckBox(false))
 
 """
 
-# ╔═╡ 7a4fbc79-9221-472f-acfa-d32249c8e828
-begin
-if multCheck
-	if spacing == "Linear"
-		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
-		
-	elseif spacing == "Logarithmic"
-		conList = logrange(initConc,endConc,stepsConc);
-		# println(conList)
-	else
-		conList = ["Empty"]
-	end
-	multiConcArr2 = createMultiArr(cur_conc,conList,veg)
-	sol_arr2 = []
-	plotArr2 = []
-	plotNumArr2 = []
-	
-	for item in multiConcArr2
-		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate), saveat = 1.0);
-		append!(sol_arr2,[tempsol])	
-	end
-		
-	numPlots2 = length(multiConcArr2)
-	for p in 1:length(sol_arr2)
-		tsol = sol_arr2[p]
-		concName = conList[p]
-		if combineCheckDeg == false
-			append!(plotArr2,[createPlot(tsol,model,concName,p)])
-		else
-			append!(plotArr2,[createPlotDF(tsol,model,concName,p)])	
-		end
-		
-	end
-	
-	# labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-	labels_mult2 = collect(keys(multiConcArr2[1]))
-	for i in 1:length(conList)
-		append!(plotNumArr2,[string("Plot ",string(i))])
-	end
-		if scaleCheck == false
-
-			plot(plotArr2..., size = (600, 400*length(multiConcArr2)),layout = (length(multiConcArr2),1), legend = false, bottom_margin = 10mm)
-		else
-			maxlim2 = 1.0
-			for j in 1:length(sol_arr2)
-				
-				if maximum(sol_arr2[j])>maxlim2
-					maxlim2 = maximum(sol_arr2[j])
-				end
-			end
-				plot(plotArr2..., size = (600, 400*length(multiConcArr2)),layout = (length(multiConcArr2),1), legend = false, bottom_margin = 10mm, ylims = (0,maxlim2/1e3))	
-		end
-	else
-		plotNumArr2 = ["Empty"];
-		nothing;
-		
-end
-	
-end
-
 # ╔═╡ 59ed7708-3c09-431e-8a09-1e94b0b90e2a
 begin
 if multCheck
-keyArr3_2 = ["A","B"];
-graphKeys3_2 = []
-graphKeyVals3_2 = HTML("""
-<bond def = "graphKeys3_2">
+keyArr3 = ["A","B"];
+graphKeys3 = []
+graphKeyVals3 = HTML("""
+<bond def = "graphKeys3">
 <form>
 
   <div id ="myDIV3" style='height:300px;overflow:scroll'>
@@ -1670,138 +1459,15 @@ onsubmit()
 	end
 end
 
-# ╔═╡ cf516855-40fa-44d0-8d63-c145ef4577d0
-begin 
-	df_array2 = [];
-if multCheck
-		
-		#Convert solutions to dataframe
-		str_labels_mult2 = formatStrArr(labels_mult2)
-		numSpecs2 = length(graphKeys3_2)
-		nplots2 = length(sol_arr2)
-		prepend!(str_labels_mult2,["timestamp"])
-		timestamps2 = []
-	for i in 1:length(sol_arr2)
-			
-		tempdf2 = DataFrame(sol_arr2[i])
-		rename!(tempdf2,str_labels_mult2)
-		timestamps2 = tempdf2[!, "timestamp"]
-		append!(df_array2,[select(tempdf2,graphKeys3_2)])
-	end
-	df_plot2 = df_array2[1]
-	# timestamps = sol_arr[1][!,:timestamp]
-	for i in 2:length(sol_arr2)
-		df_plot2 = hcat(df_plot2,df_array2[i], makeunique=true)
-	end
-		# println(df_plot)
-		
-		# mat_data = Matrix(df_plot)
-		# plotnames = names(df_plot)
-		# plotlabel = reshape(plotnames, (1,length(plotnames)))
-		# plot(timestamps,mat_data, label = plotLabel, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
-	else
-		nothing;
-	end
-end
-
-# ╔═╡ 6734cf5a-a3dc-4de3-9f33-45e149a27ebc
-begin 
-	if multCheck == true && length(df_array2)>0 
-generatePlotDF2(df_plot2,timestamps2,numSpecs2,nplots2)
-	else
-		nothing;
-	end
-end
-
-# ╔═╡ d9a98759-e596-4c81-98f5-2d4efdc964f6
-md"""#### Choose export mode $(@bind exportMode2 Select(["Export all plots", "Export specific plot"]))
-##### Select plot for export: 
-$(@bind conListSel2 Select(formatStrArr(plotNumArr2)))
-"""
-
-# ╔═╡ 20c7902d-ebbf-49d1-a103-fb7524489524
-begin
-	if multCheck
-	if exportMode2 == "Export specific plot"
-		ind2 = parse(Int8,conListSel2[end])
-		println("EXporting specific Plot")
-		sol_sel2 = sol_arr2[ind2][1]
-		df_sel2 = DataFrame(sol_arr2[ind2])
-		nms_sel2 = collect(keys(sol_sel2))
-		prepend!(nms_sel2,[:timestamp])
-		rename!(df_sel2,nms_sel2)
-		nmsStr_sel2 = formatStrArr(nms_sel2)
-		filtered_names_sel2 = []	
-		filtered_names_inx_sel2 = []
-
-		if length(filter_list) > 0
-			for i in 1:length(filter_list)
-				name = filter_list[i]
-					
-					for j in 1:length(nmsStr_sel2)
-
-						if occursin(name,nmsStr_sel2[j]) == true
-							append!(filtered_names_inx_sel2,[j])
-						end
-					end
-			end
-		end
-		sort!(unique!(filtered_names_inx_sel2))
-		deleteat!(nmsStr_sel2,filtered_names_inx_sel2)
-
-		finKeys_sel2 = formatSymbArr(nmsStr_sel2)
-
-		dfFin_sel2 = select(df_sel2,finKeys_sel2)
-		# CSV.write("sim_res_sel.csv", dfFin_sel)
-		XLSX.writetable("sim_results2.xlsx", collect(DataFrames.eachcol(dfFin_sel2)), DataFrames.names(dfFin_sel2);overwrite = true)
-
-		
-	elseif exportMode2 == "Export all plots"
-		println("Export all plots")
-		# Use the xlsx package to create an excel sheet with multiple tabs. Then can export dataframes
-		#First convert solution into dataframes
-		df_list2 = []
-
-		for sltn in 1:length(plotNumArr2)
-			println(sltn)
-			temp_sol = sol_arr2[sltn]
-			# println(temp_sol)
-			df_temp = DataFrame(temp_sol)
-			
-			append!(df_list2,[df_temp])
-		end
-			
-		spec_names2 = formatStrArr(collect(keys(sol_arr2[1][1])))
-		prepend!(spec_names2,["timestamp"])
-		df_dict2 = Dict()
-		for i in 1:length(df_list2)
-			name = "Plot "*string(i)
-			df_dict2[Symbol(name)] =  ( collect(DataFrames.eachcol(df_list2[i])), spec_names2)
-		end
-	XLSX.writetable("sim_results2.xlsx"; df_dict2..., overwrite = true)	
-
-	end
-						md"""
-
- Download data:  $(DownloadButton(read("sim_results2.xlsx"), "sim_results2.xlsx")) 
-
-"""
-	else
-		nothing
-	end
-
-		
-end
-
 # ╔═╡ 8c14d4a9-e2e7-4b18-bbba-a290872c2ca6
-md"""Display total concentrations? $(@bind combineCheck2 CheckBox(false)) 
+md"""Display total concentrations? $(@bind combineCheck CheckBox(false)) 
 
 """
 
 # ╔═╡ bf7ea880-5dff-419d-ba69-b4271b04bbe2
 begin
 
-keyArr2_2 = ["A","B"];
+keyArr2 = ["A","B"];
 graphKeys2 = []
 graphKeyVals2 = HTML("""
 <bond def = "graphKeys2">
@@ -1899,21 +1565,21 @@ onsubmit()
 end
 
 # ╔═╡ 5dc80a12-9265-4e5d-92b3-be8883f65ee7
-md"""Filter Inact? $(@bind filterInact2 CheckBox(false)) \
-Filter degraded? $(@bind filterDeg2 CheckBox(false))
+md"""Filter Inact? $(@bind filterInact CheckBox(false)) \
+Filter degraded? $(@bind filterDeg CheckBox(false))
 """
 
 
 # ╔═╡ def4bd87-532b-4552-8229-620a27c04641
 begin
-	filter_list2 = [];
+	filter_list = [];
 	
-if filterInact2 == true || filterDeg2 == true
-	if filterInact2 == true
-			append!(filter_list2,["inact"]);
+if filterInact == true || filterDeg == true
+	if filterInact == true
+			append!(filter_list,["inact"]);
 	end
-	if filterDeg2 == true
-			append!(filter_list2,["deg"]);
+	if filterDeg == true
+			append!(filter_list,["deg"]);
 	end
 		
 end
@@ -1921,75 +1587,455 @@ end
 end
 
 # ╔═╡ 1b9fe2e0-6a17-4f6b-bb23-f371e261e86e
-md"""Export only selected variables? $(@bind importCheck2 CheckBox(false))"""
+md"""Export only selected variables? $(@bind importCheck CheckBox(false))"""
+
+# ╔═╡ 4886158c-8dca-4d70-9903-7287624983ef
+begin
+
+graphKeySymb = Symbol[]
+for item in graphKeys2
+		push!(graphKeySymb,Symbol(item))
+
+end
+end
+
+# ╔═╡ 56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
+begin
+	function formatSymbArr(arr)
+		#Change string array to symbol
+		B = Array{Symbol}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = Symbol(arr[i])
+		end
+		return B
+	end
+
+
+	function formatStrArr(arr)
+		#Change symbol array to string
+		B = Array{String}(undef, length(arr))
+		for i in 1:length(arr)
+			 B[i] = string(arr[i])
+		end
+		return B
+
+	end
+
+	function combineConc(df)
+		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
+		cols = names(df)
+		# println(cols)
+		chems = Array{String}(undef, 0)
+		for i in 2:length(cols)
+
+			# letter = cols[i][1]
+			letter = split(cols[i],"↦")[1]
+			println(split(cols[i],"↦")[1])
+			append!(chems,[letter])
+		end
+		unique!(chems)
+		println(chems)
+		dff = DataFrame()
+		dff.timestamp = df[!,"timestamp"]
+		for i in 1:length(chems)
+			arr = zeros(length(dff.timestamp))
+			# println("new chem")
+			for j in 2:length(cols)
+				letter2 = split(cols[j],"↦")[1]
+				# if chems[i] == cols[j][1]
+				println(letter2)
+				if chems[i] == letter2
+					# println("arr before: ",arr[10] )
+					# println("Value added: ", df[10,cols[j]])
+					arr = arr .+ df[!,cols[j]]
+					# println("arr after: ",arr[10] )
+
+				end
+			end
+
+			colname = string(chems[i])
+
+			dff[!,colname] = arr
+		end
+
+		return dff
+	end
+	
+	
+		function combineConcNoDeg(df)
+		#Build a list of the different chemicals. Basically take the first letter of each and the make the list unique so that we can combine everything easily.
+		cols = names(df)
+		# println(cols)
+		chems = Array{String}(undef, 0)
+		for i in 2:length(cols)
+
+			# letter = cols[i][1]
+			letter = split(cols[i],"↦")[1]
+			# println(split(cols[i],"↦")[1])
+			if occursin("deg",letter) == false
+				append!(chems,[letter])
+			end
+		end
+		unique!(chems)
+		# println(chems)
+		dff = DataFrame()
+		dff.timestamp = df[!,"timestamp"]
+		for i in 1:length(chems)
+			arr = zeros(length(dff.timestamp))
+			# println("new chem")
+			for j in 2:length(cols)
+				letter2 = split(cols[j],"↦")[1]
+
+				if chems[i] == letter2
+					arr = arr .+ df[!,cols[j]]
+
+				end
+			end
+
+			colname = string(chems[i])
+
+			dff[!,colname] = arr
+		end
+
+		return dff
+	end
+	
+	
+	function logrange(x1, x2, n) 
+		B = Float64[] 
+		startLog = log10(parse(Float64,x1))
+		endLog = log10(parse(Float64,x2))
+		
+		logvals = range(startLog,endLog,length = n)
+		for i in logvals
+			append!(B,10.0^i)	
+		end
+		return B
+		# return (10^y for y in range(log10(parse(Float64,x1)), log10(parse(Float64,x2)), length=n))
+		
+	end
+	
+	function createMultiArr(cur_conc,conList,veg)
+		multiConcArr = []
+		
+		for i in 1:length(conList)
+			tempArr = copy(cur_conc)
+			println(tempArr)
+			item = conList[i]
+			println(item)
+			tempArr[Symbol(veg)] = item
+			println(tempArr)
+			append!(multiConcArr,[tempArr])
+		end
+		return multiConcArr
+	end
+	
+	function createPlot(sol, model,current_conc,n)
+		tsteps = sol.t
+		labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+		name = string("Plot ",string(n)," init conc: ", string(current_conc))
+	  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...),title = name, linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+		
+	end
+	
+	function createPlotDF(sol,model,current_conc,n)
+			graphKeySymb2 = Symbol[]
+			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
+			
+			S_labels2 = formatStrArr(labels2)
+			prepend!(S_labels2,["timestamp"])
+			dfs2 = DataFrame(sol)
+			rename!(dfs2,S_labels2)
+			# names(dfs)[1][1]
+			# dff2 = combineConc(dfs2)
+			dff2 = combineConcNoDeg(dfs2)
+			labels_new2 = names(dff2)[2:end]
+			name = string("Plot ",string(n),", init conc: ", string(current_conc))
+			timesteps2 = dff2[!,"timestamp"]
+			dff2[!,2:end]
+			data2 = Matrix(dff2[!,2:end])/1e3
+			return plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), title = name, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+		
+	end
+	
+	function generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
+		clrs = ["red" "blue" "green" "purple" "orange" "pink"]
+		mkrs = [:circle :cross :rect :diamond :utriangle :dtriangle ]
+		
+		#Format markers and colors correctly
+		clr_array = []
+		mkrs_array = []
+		for i in 1:nplots
+			for j in 1:numSpecs
+				append!(clr_array,[clrs[i]])
+				append!(mkrs_array,[mkrs[j]])
+			end
+		end
+		
+		clr_array = reshape(clr_array, (1,length(clr_array)))
+		mkrs_array = reshape(mkrs_array, (1,length(mkrs_array)))
+		# mkrs = mkrs[1:numSpecs]
+		# println(mkrs)
+		mat_data = Matrix(df_plot)
+		plotnames = names(df_plot)
+		plotlabel = reshape(plotnames, (1,length(plotnames)))
+		return plot(timestamps,mat_data, label = plotlabel, linecolor = clr_array, markershape = mkrs_array, markercolor = clr_array, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+	end
+	
+end
+
+
+
+# ╔═╡ 7a4fbc79-9221-472f-acfa-d32249c8e828
+begin
+if multCheck
+	if spacing == "Linear"
+		conList = range(parse(Float64,initConc), parse(Float64,endConc), length = stepsConc)
+		
+	elseif spacing == "Logarithmic"
+		conList = logrange(initConc,endConc,stepsConc);
+		# println(conList)
+	else
+		conList = ["Empty"]
+	end
+	multiConcArr = createMultiArr(cur_conc,conList,veg)
+	sol_arr = []
+	plotArr = []
+	plotNumArr = []
+	
+	for item in multiConcArr
+		tempsol = solve(ODEProblem(vf, item, (0.0,120.0),cur_rate), saveat = 1.0);
+		append!(sol_arr,[tempsol])	
+	end
+		
+	numPlots = length(multiConcArr)
+	for p in 1:length(sol_arr)
+		tsol = sol_arr[p]
+		concName = conList[p]
+		if combineCheckDeg == false
+			append!(plotArr,[createPlot(tsol,model,concName,p)])
+		else
+			append!(plotArr,[createPlotDF(tsol,model,concName,p)])	
+		end
+		
+	end
+	
+	# labels_mult = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+	labels_mult = collect(keys(multiConcArr[1]))
+	for i in 1:length(conList)
+		append!(plotNumArr,[string("Plot ",string(i))])
+	end
+		if scaleCheck == false
+
+			plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm)
+		else
+			maxlim = 1.0
+			for j in 1:length(sol_arr)
+				
+				if maximum(sol_arr[j])>maxlim
+					maxlim = maximum(sol_arr[j])
+				end
+			end
+				plot(plotArr..., size = (600, 400*length(multiConcArr)),layout = (length(multiConcArr),1), legend = false, bottom_margin = 10mm, ylims = (0,maxlim/1e3))	
+		end
+	else
+		plotNumArr = ["Empty"];
+		nothing;
+		
+end
+	
+end
+
+# ╔═╡ cf516855-40fa-44d0-8d63-c145ef4577d0
+begin 
+	df_array = [];
+if multCheck
+		
+		#Convert solutions to dataframe
+		str_labels_mult = formatStrArr(labels_mult)
+		numSpecs = length(graphKeys3)
+		nplots = length(sol_arr)
+		prepend!(str_labels_mult,["timestamp"])
+		timestamps = []
+	for i in 1:length(sol_arr)
+			
+		tempdf = DataFrame(sol_arr[i])
+		rename!(tempdf,str_labels_mult)
+		timestamps = tempdf[!, "timestamp"]
+		append!(df_array,[select(tempdf,graphKeys3)])
+	end
+	df_plot = df_array[1]
+	# timestamps = sol_arr[1][!,:timestamp]
+	for i in 2:length(sol_arr)
+		df_plot = hcat(df_plot,df_array[i], makeunique=true)
+	end
+		# println(df_plot)
+		
+		# mat_data = Matrix(df_plot)
+		# plotnames = names(df_plot)
+		# plotlabel = reshape(plotnames, (1,length(plotnames)))
+		# plot(timestamps,mat_data, label = plotLabel, linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+	else
+		nothing;
+	end
+end
+
+# ╔═╡ 6734cf5a-a3dc-4de3-9f33-45e149a27ebc
+begin 
+	if multCheck == true && length(df_array)>0 
+generatePlotDF2(df_plot,timestamps,numSpecs,nplots)
+	else
+		nothing;
+	end
+end
+
+# ╔═╡ d9a98759-e596-4c81-98f5-2d4efdc964f6
+md"""#### Choose export mode $(@bind exportMode Select(["Export all plots", "Export specific plot"]))
+##### Select plot for export: 
+$(@bind conListSel Select(formatStrArr(plotNumArr)))
+"""
+
+# ╔═╡ 20c7902d-ebbf-49d1-a103-fb7524489524
+begin
+	if multCheck
+	if exportMode == "Export specific plot"
+		ind = parse(Int8,conListSel[end])
+		println("EXporting specific Plot")
+		sol_sel = sol_arr[ind][1]
+		df_sel = DataFrame(sol_arr[ind])
+		nms_sel = collect(keys(sol_sel))
+		prepend!(nms_sel,[:timestamp])
+		rename!(df_sel,nms_sel)
+		nmsStr_sel = formatStrArr(nms_sel)
+		filtered_names_sel = []	
+		filtered_names_inx_sel = []
+
+		if length(filter_list) > 0
+			for i in 1:length(filter_list)
+				name = filter_list[i]
+					
+					for j in 1:length(nmsStr_sel)
+
+						if occursin(name,nmsStr_sel[j]) == true
+							append!(filtered_names_inx_sel,[j])
+						end
+					end
+			end
+		end
+		sort!(unique!(filtered_names_inx_sel))
+		deleteat!(nmsStr_sel,filtered_names_inx_sel)
+
+		finKeys_sel = formatSymbArr(nmsStr_sel)
+
+		dfFin_sel = select(df_sel,finKeys_sel)
+		# CSV.write("sim_res_sel.csv", dfFin_sel)
+		XLSX.writetable("sim_results2.xlsx", collect(DataFrames.eachcol(dfFin_sel)), DataFrames.names(dfFin_sel);overwrite = true)
+
+		
+	elseif exportMode == "Export all plots"
+		println("Export all plots")
+		# Use the xlsx package to create an excel sheet with multiple tabs. Then can export dataframes
+		#First convert solution into dataframes
+		df_list = []
+
+		for sltn in 1:length(plotNumArr)
+			println(sltn)
+			temp_sol = sol_arr[sltn]
+			# println(temp_sol)
+			df_temp = DataFrame(temp_sol)
+			
+			append!(df_list,[df_temp])
+		end
+			
+		spec_names = formatStrArr(collect(keys(sol_arr[1][1])))
+		prepend!(spec_names,["timestamp"])
+		df_dict = Dict()
+		for i in 1:length(df_list)
+			name = "Plot "*string(i)
+			df_dict[Symbol(name)] =  ( collect(DataFrames.eachcol(df_list[i])), spec_names)
+		end
+	XLSX.writetable("sim_results2.xlsx"; df_dict..., overwrite = true)	
+
+	end
+						md"""
+
+ Download data:  $(DownloadButton(read("sim_results2.xlsx"), "sim_results2.xlsx")) 
+
+"""
+	else
+		nothing
+	end
+
+		
+end
 
 # ╔═╡ 3eadc95c-b063-4ca6-ab5f-20acf5c56c2e
 begin
-		sol2_2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
+		sol2 = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate, saveat=collect(0:120)));
 	if importCheck == false
 	
-	df2 = DataFrame(sol2_2)
-	nms2 = collect(keys(sol2_2(0)))
-	prepend!(nms2,[:timestamp])
-	rename!(df2,nms2)
-	nmsStr2 = formatStrArr(nms2)
-	filtered_names2 = []	
-	filtered_names_inx2 = []
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+	nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
 	
-	if length(filter_list2) > 0
-		for i in 1:length(filter_list2)
-			name = filter_list2[i]
+	if length(filter_list) > 0
+		for i in 1:length(filter_list)
+			name = filter_list[i]
 				println(name)
-				for j in 1:length(nmsStr2)
+				for j in 1:length(nmsStr)
 					
-					if occursin(name,nmsStr2[j]) == true
-						append!(filtered_names_inx2,[j])
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
 					end
 				end
 		end
 	end
-	sort!(unique!(filtered_names_inx2))
-	deleteat!(nmsStr2,filtered_names_inx2)
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
 	
-	finKeys2 = formatSymbArr(nmsStr2)
+	finKeys = formatSymbArr(nmsStr)
 
-	dfFin2 = select(df2,finKeys2)
-		CSV.write("sim_res2.csv", dfFin2)
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res2.csv", dfFin)
 		
 		
 	# sol2.u
 	# CSV.write("sim_res.csv", DataFrame(sol2), header = vcat([:timestamp], collect(keys(sol(0)))))
 	else
 
-	df2 = DataFrame(sol2_2)
-	nms2 = collect(keys(sol2_2(0)))
-	prepend!(nms2,[:timestamp])
-	rename!(df2,nms2)
-		nmsStr2 = formatStrArr(nms2)
-	filtered_names2 = []	
-	filtered_names_inx2 = []
+	df = DataFrame(sol2)
+	nms = collect(keys(sol2(0)))
+	prepend!(nms,[:timestamp])
+	rename!(df,nms)
+		nmsStr = formatStrArr(nms)
+	filtered_names = []	
+	filtered_names_inx = []
 	
 	if length(filter_list) > 0
 		for i in 1:length(filter_list)
 			name = filter_list[i]
 				println(name)
-				for j in 1:length(nmsStr2)
+				for j in 1:length(nmsStr)
 					
-					if occursin(name,nmsStr2[j]) == true
-						append!(filtered_names_inx2,[j])
+					if occursin(name,nmsStr[j]) == true
+						append!(filtered_names_inx,[j])
 					end
 				end
 		end
 	end
-	sort!(unique!(filtered_names_inx2))
-	deleteat!(nmsStr2,filtered_names_inx2)
-	intersect!(nmsStr2,graphKeys2)
+	sort!(unique!(filtered_names_inx))
+	deleteat!(nmsStr,filtered_names_inx)
+	intersect!(nmsStr,graphKeys2)
 	
-	finKeys2 = formatSymbArr(nmsStr2)
-	prepend!(finKeys2,[:timestamp])
+	finKeys = formatSymbArr(nmsStr)
+	prepend!(finKeys,[:timestamp])
 	
-	dfFin2 = select(df2,finKeys2)
-		CSV.write("sim_res2.csv", dfFin2)
+	dfFin = select(df,finKeys)
+		CSV.write("sim_res2.csv", dfFin)
 	end
 
 	md""" Download simulation data:  $(DownloadButton(read("sim_res2.csv"), "sim_results2.csv")) """
@@ -1999,50 +2045,40 @@ end
 begin
   if c != 0
 		
-		if filterInact2 == true || filterDeg2 == true
-			timesteps2b = dfFin2[!,"timestamp"]
-			data2b = Matrix(dfFin2[!,2:end])/1e3
-			labels_new2b = names(dfFin2)[2:end]
-			plot(timesteps2b,data2b, label = reshape(labels_new2b, (1,length(labels_new2b))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+		if filterInact == true || filterDeg == true
+			timesteps = dfFin[!,"timestamp"]
+			data = Matrix(dfFin[!,2:end])/1e3
+			labels_new = names(dfFin)[2:end]
+			plot(timesteps,data, label = reshape(labels_new, (1,length(labels_new))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 			
 		elseif combineCheckDeg == false
-		  tsteps2 = sol.t
+		  tsteps = sol.t
 		  # labels = [:G_deg]
-			labels2b = isempty(graphKeySymb) ? snames(model) : graphKeySymb
-		  plot(tsteps2, [[sol(t)[l]/1e3 for t in tsteps2] for l in labels2b], labels=hcat(String.(labels2b)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
+			labels = isempty(graphKeySymb) ? snames(model) : graphKeySymb
+		  plot(tsteps, [[sol(t)[l]/1e3 for t in tsteps] for l in labels], labels=hcat(String.(labels)...), linewidth=3, xlabel="Minutes", ylabel="Solution Concentration (nM)")
 
 		else
-			graphKeySymb2b = Symbol[]
-			labels2b = isempty(graphKeySymb2b) ? snames(model) : graphKeySymb2b
+			graphKeySymb2 = Symbol[]
+			labels2 = isempty(graphKeySymb2) ? snames(model) : graphKeySymb2
 			
-			S_labels2_2 = formatStrArr(labels2b)
-			prepend!(S_labels2_2,["timestamp"])
-			dfs2_2 = DataFrame(sol)
-			rename!(dfs2_2,S_labels2_2)
+			S_labels2 = formatStrArr(labels2)
+			prepend!(S_labels2,["timestamp"])
+			dfs2 = DataFrame(sol)
+			rename!(dfs2,S_labels2)
 			# names(dfs)[1][1]
 			# dff2 = combineConc(dfs2)
-			dff2_2 = combineConcNoDeg(dfs2_2)
-			labels_new2_2 = names(dff2_2)[2:end]
+			dff2 = combineConcNoDeg(dfs2)
+			labels_new2 = names(dff2)[2:end]
 
-			timesteps2_2 = dff2_2[!,"timestamp"]
-			dff2_2[!,2:end]
-			data2_2 = Matrix(dff2_2[!,2:end])/1e3
-			plot(timesteps2_2,data2_2, label = reshape(labels_new2_2, (1,length(labels_new2_2))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
+			timesteps2 = dff2[!,"timestamp"]
+			dff2[!,2:end]
+			data2 = Matrix(dff2[!,2:end])/1e3
+			plot(timesteps2,data2, label = reshape(labels_new2, (1,length(labels_new2))), linewidth = 3, xlabel = "Minutes",ylabel = "Solution Concentration (nM)")
 			# Vector(labels_new)
 		end
 
 	end
 
-end
-
-# ╔═╡ 4886158c-8dca-4d70-9903-7287624983ef
-begin
-
-graphKeySymb2_2 = Symbol[]
-for item in graphKeys2
-		push!(graphKeySymb2_2,Symbol(item))
-
-end
 end
 
 # ╔═╡ 33a0fc85-1069-4355-b2a6-6165f91d24e7
@@ -2069,12 +2105,9 @@ gen_fragments(subs2[1])
 # ╠═93df89f0-8429-4fcc-bd01-6982417f5134
 # ╠═56afefe8-4452-4b2a-8a3b-e493ee1dd6c6
 # ╠═e4100b5b-b255-48db-a989-016fa72f8da5
-# ╠═6b3cd7cf-a084-40e9-81fd-f908b1917e32
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
 # ╠═7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-# ╠═fc96f433-e81f-4602-a585-8c0ccd74769c
-# ╠═77892f7a-3409-4131-ae0e-ee95b6215cc2
 # ╠═41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 # ╠═553bce96-a29f-4a77-a193-8005914f4bfa
 # ╠═e5d3b132-baca-4cdb-aeb0-09272610ed6f
@@ -2085,15 +2118,8 @@ gen_fragments(subs2[1])
 # ╠═2012c352-3bff-4c84-bc2e-d83b22d95349
 # ╠═6b819b32-3601-48cc-9ff4-1df3e88e8034
 # ╟─0858af84-9c5c-43b4-b5c9-fec1f1c4dba4
-# ╠═ea6c1852-0eb3-401b-96fd-f727af953594
-# ╠═d29ef49b-f56d-4f2d-a2ce-a9eef55644a7
 # ╠═ab8a18b1-4975-4f4a-994b-b08773489baf
-# ╠═68923144-2495-40a4-af60-b2ef4f4d0e8f
 # ╠═79064f4a-f4ad-4837-898a-d7a7e03f04da
-# ╠═8a9c6325-684c-48bf-8e4f-4022bc0a72da
-# ╠═59c43741-2566-438f-9c99-0134c408b11e
-# ╠═8a00cfb5-0abf-4567-b4af-cf024fd17262
-# ╠═aaff0de1-f0b0-4839-a8d5-0b7caeb6ef56
 # ╠═31a3d715-4a80-4696-96c3-8e5152797f9f
 # ╠═7a4fbc79-9221-472f-acfa-d32249c8e828
 # ╠═59ed7708-3c09-431e-8a09-1e94b0b90e2a
