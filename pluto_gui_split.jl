@@ -725,22 +725,29 @@ function bundle_end_products(pn::T) where T <: AbstractPetriNet
 	for s in keys(repeats)
 		if length(repeats[s])>1
 			tmp2 = incident(pn2,s,:sname)
-			for i in length(tmp2):-1:2
-				tmp_a = incident(pn2,tmp2[i],:is)
-				for j in tmp_a
-					set_subpart!(pn2,j,:is,tmp2[1])
+			num_incs = [length(incident(pn2,x,:is)) for x in tmp2]
+			any(num_incs.>0) ? idx=findfirst(num_incs.>0) : idx=1
+			for i in length(tmp2):-1:1
+				if i ≠ idx
+					tmp_a = incident(pn2,tmp2[i],:is)
+					for j in tmp_a
+						set_subpart!(pn2,j,:is,tmp2[idx])
+					end
+					tmp_b = incident(pn2,tmp2[i],:os)
+					for j in tmp_b
+						set_subpart!(pn2,j,:os,tmp2[idx])
+					end
 				end
-				tmp_b = incident(pn2,tmp2[i],:os)
-				for j in tmp_b
-					set_subpart!(pn2,j,:os,tmp2[1])
+			end
+			for i in length(tmp2):-1:1
+				if i ≠ idx
+					rem_part!(pn2,:S,tmp2[i])
 				end
-				rem_part!(pn2,:S,tmp2[i])
 			end
 		end
 	end
 	pn2
 end;
-	
 end
 
 
@@ -874,7 +881,57 @@ end
 Graph(def_model)
 
 # ╔═╡ 7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> Graph
+multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex 
+
+# ╔═╡ f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
+function bundle_end_products2(pn::T) where T <: AbstractPetriNet
+	pn2 = deepcopy(pn)
+	repeats = Dict()
+	for (i, s) in enumerate(snames(pn))
+		if s ∉ keys(repeats)
+			repeats[s] = [i]
+		else
+			push!(repeats[s],i)
+		end
+	end
+	for s in keys(repeats)
+		println(s)
+		if length(repeats[s])>1
+			tmp2 = incident(pn2,s,:sname)
+			num_incs = [length(incident(pn2,x,:is)) for x in tmp2]
+			println(num_incs)
+			any(num_incs.>0) ? idx=findfirst(num_incs.>0) : idx=1
+			println(" ",tmp2," | ",idx)
+			for i in length(tmp2):-1:1
+				if i ≠ idx
+					tmp_a = incident(pn2,tmp2[i],:is)
+					for j in tmp_a
+						println("  ",j)
+						set_subpart!(pn2,j,:is,tmp2[idx])
+					end
+					println("  --")
+					tmp_b = incident(pn2,tmp2[i],:os)
+					for j in tmp_b
+						println("  ",j," ",tmp2[idx])
+						set_subpart!(pn2,j,:os,tmp2[idx])
+					end
+					println("  BOOO")
+				end
+				println(tmp2[i])
+			end
+			for i in length(tmp2):-1:1
+				if i ≠ idx
+					rem_part!(pn2,:S,tmp2[i])
+				end
+			end
+			println(" ",incident(pn2,s,:sname))
+		end
+	end
+	pn2
+end;
+
+# ╔═╡ 300533b7-0eab-46cb-99aa-267466998b59
+multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> bundle_end_products2
 
 # ╔═╡ 41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
@@ -1342,6 +1399,9 @@ cur_rate = Dict(tnames(model)[i]=>parse(Float64, c[i]) for i in 1:length(tnames(
 sol = solve(ODEProblem(vf, cur_conc, (0.0,120.0),cur_rate));
   nothing
 end
+
+# ╔═╡ 07a47e3b-1b74-40fe-b162-48e9920bf98c
+length(cur_conc)
 
 # ╔═╡ 31a3d715-4a80-4696-96c3-8e5152797f9f
 md"""### Iterate over multiple species concentrations $(@bind multCheck CheckBox(false))
@@ -2111,6 +2171,8 @@ gen_fragments(subs2[1])
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
 # ╠═7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
+# ╠═300533b7-0eab-46cb-99aa-267466998b59
+# ╠═f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
 # ╠═41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 # ╠═553bce96-a29f-4a77-a193-8005914f4bfa
 # ╠═e5d3b132-baca-4cdb-aeb0-09272610ed6f
@@ -2123,6 +2185,7 @@ gen_fragments(subs2[1])
 # ╟─0858af84-9c5c-43b4-b5c9-fec1f1c4dba4
 # ╠═ab8a18b1-4975-4f4a-994b-b08773489baf
 # ╠═3694f04c-7d0b-4d22-b730-c37fa5326422
+# ╠═07a47e3b-1b74-40fe-b162-48e9920bf98c
 # ╠═79064f4a-f4ad-4837-898a-d7a7e03f04da
 # ╠═31a3d715-4a80-4696-96c3-8e5152797f9f
 # ╠═7a4fbc79-9221-472f-acfa-d32249c8e828
