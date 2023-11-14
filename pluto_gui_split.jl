@@ -626,6 +626,22 @@ function multisplit_generators(enzymes::Array{Symbol}, molecule::Symbol)
   end
   gens
 end;
+function multisplit_generators(enzymes::Array{Symbol}, molecules::Array{Symbol})
+  gens = Dict{Symbol, Any}()
+  for enzyme1 in enzymes
+	for molecule in molecules
+	    merge!(gens,multisplit_generators(enzyme1, molecule))
+	end
+    for enzyme2 in enzymes
+      if enzyme1==enzyme2
+        gens[Symbol(:cat,enzyme1)] = enz(enzyme1)  
+      else
+        gens[Symbol(:cat,enzyme1,:cat,enzyme2)] = enz_enz(enzyme1,enzyme2)
+      end
+    end  
+  end
+  gens
+end;
 	
 function gen_fragments(substrate::Symbol)
   frags = [substrate]
@@ -677,10 +693,10 @@ function multisplit_uwd(enzymes::Array{Symbol}, substrate::Symbol)
   rel
 end;
 
-function multisplit_uwd2(enzymes::Array{Symbol}, substrate::Symbol) 
+function multisplit_uwd(enzymes::Array{Symbol}, input_substrates::Array{Symbol}) 
   rel = RelationDiagram{Symbol}(0)
-
-  substrates = gen_fragments(substrate)
+  
+  substrates = vcat([gen_fragments(s) for s in input_substrates]...)
   chemicals = vcat(substrates, enzymes)
 
   subs = add_junctions!(rel, length(substrates), variable=substrates)
@@ -710,7 +726,7 @@ function multisplit_uwd2(enzymes::Array{Symbol}, substrate::Symbol)
   end
   add_parts!(rel, :OuterPort, length(chemicals), outer_junction = vcat(subs, enzs))
   rel
-end
+end;
 
 function bundle_end_products(pn::T) where T <: AbstractPetriNet
 	pn2 = deepcopy(pn)
@@ -881,7 +897,10 @@ end
 Graph(def_model)
 
 # ╔═╡ 7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex 
+multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> bundle_end_products |> Graph
+
+# ╔═╡ 0f690572-29c0-4ad8-ad46-69fb88dcb4da
+multisplit_uwd([:K], [:ABC, :XY]) |> lfunctor |> apex |> bundle_end_products
 
 # ╔═╡ f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
 function bundle_end_products2(pn::T) where T <: AbstractPetriNet
@@ -929,9 +948,6 @@ function bundle_end_products2(pn::T) where T <: AbstractPetriNet
 	end
 	pn2
 end;
-
-# ╔═╡ 300533b7-0eab-46cb-99aa-267466998b59
-multisplit_uwd([:K,:L], :ABC) |> lfunctor |> apex |> bundle_end_products2
 
 # ╔═╡ 41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 md""" Upload a rate data file to use:  $(@bind user_csv FilePicker()) """
@@ -2171,7 +2187,7 @@ gen_fragments(subs2[1])
 # ╠═ef14041a-9753-456d-a242-d08dc0328507
 # ╠═ecdc5f61-6041-42ef-819c-1d83c062c8e3
 # ╠═7f6b0fe8-8ae1-4a42-87ea-2d5d3ae95181
-# ╠═300533b7-0eab-46cb-99aa-267466998b59
+# ╠═0f690572-29c0-4ad8-ad46-69fb88dcb4da
 # ╠═f3f8d89e-9ef5-44fa-9e7b-8c73d93824fa
 # ╠═41fa1014-0d0a-4b30-9452-c5a1fc8e58b5
 # ╠═553bce96-a29f-4a77-a193-8005914f4bfa
