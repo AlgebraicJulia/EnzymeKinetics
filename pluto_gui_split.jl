@@ -790,7 +790,7 @@ ABC = :ABC=>66000;
   B = :B=>0;
   E1 = :E1=>700000;
   G1 = :G1=>714000;
-  subs2 = [:ABC]
+  subs2 = [:ABC, :E1, :G1]
 
   # Parameter Rates (units of pM and min)
   rxns = Dict(
@@ -901,8 +901,8 @@ ABC = :ABC=>66000;
     :catS1subG1=>enz_sub_split(rxns, S,G1,1),
     :catL1subG1=>enz_sub_split(rxns, L,G1,1)
   ));
-  lfunctor(x) = oapply(x, multisplit_generators([:K,:L,:S],:ABC))
-  def_model = apex(functor(multisplit_uwd([:K,:L,:S],:ABC)))
+  lfunctor(x) = oapply(x, multisplit_generators([:K,:L,:S],[:ABC, :E1, :G1]))
+  def_model = apex(functor(multisplit_uwd([:K,:L,:S],[:ABC, :E1, :G1])))
   def_rates = rates(def_model)
   def_concs = Dict(c=>concentrations(def_model)[c] for c in snames(def_model))
   def_concs[:Spike] = Spike[2]
@@ -995,13 +995,15 @@ begin
 				push!(valid_enz_sub, s)
 			end
 		end
-		for s in gen_fragments(subs2[1])
-			for i in 1:(length(String(s))-1)
-      if Symbol("bind$(i)_$(e)↦$(s)") ∈ keys(m_rates)
-				push!(valid_enz_sub, e)
-				push!(valid_enz_sub, s)
+		for sub in subs2
+			for s in gen_fragments(sub)
+				for i in 1:(length(String(s))-1)
+      				if Symbol("bind$(i)_$(e)↦$(s)") ∈ keys(m_rates)
+					push!(valid_enz_sub, e)
+					push!(valid_enz_sub, s)
+				end
 			end
-			end
+		end
 		end
 	end
 	status
@@ -1035,18 +1037,19 @@ md"""Substrates"""
 # ╔═╡ d5a956d0-b443-4ee2-9045-14146012a435
 begin
 
-	local boxes = Dict(:G=>md"G $(@bind gbox CheckBox(:G ∈ valid_enz_sub))",
-				 :E=>md"E $(@bind ebox CheckBox(:E ∈ valid_enz_sub && false))",
-				 :ABC=>md"ABC $(@bind abcbox CheckBox(:ABC ∈ valid_enz_sub))",
+	local boxes = Dict(:G1=>md"G1 $(@bind gbox CheckBox(:G1 ∈ valid_enz_sub))",
+				 :E1=>md"E1 $(@bind ebox CheckBox(:E1 ∈ valid_enz_sub && false))",
+				 :ABC=>md"ABC $(@bind abcbox CheckBox(:ABC ∈ valid_enz_sub))")
+	#=,
 				 :AB=>md"AB $(@bind abbox CheckBox(:AB ∈ valid_enz_sub))",
-				 :BC=>md"BC $(@bind bcbox CheckBox(:BC ∈ valid_enz_sub))")
+				 :BC=>md"BC $(@bind bcbox CheckBox(:BC ∈ valid_enz_sub))")=#
 md"""
-$(:G ∈ valid_enz_sub ? boxes[:G] : md"")
-$(:E ∈ valid_enz_sub ? boxes[:E] : md"")
+$(:G1 ∈ valid_enz_sub ? boxes[:G1] : md"")
+$(:E1 ∈ valid_enz_sub ? boxes[:E1] : md"")
 $(:ABC ∈ valid_enz_sub ? boxes[:ABC] : md"")
-$(:AB ∈ valid_enz_sub ? boxes[:AB] : md"")
-$(:BC ∈ valid_enz_sub ? boxes[:BC] : md"")
 """
+# $(:AB ∈ valid_enz_sub ? boxes[:AB] : md"")
+# $(:BC ∈ valid_enz_sub ? boxes[:BC] : md"")
 end
 
 # ╔═╡ 2012c352-3bff-4c84-bc2e-d83b22d95349
@@ -1061,8 +1064,10 @@ inpF = Symbol[];
 
 	end
 
-outp = [gbox, ebox, abcbox, abbox, bcbox];
-outSymb = [:G, :E, :ABC, :AB, :BC];
+# outp = [gbox, ebox, abcbox, abbox, bcbox];
+# outSymb = [:G1, :E1, :ABC, :AB, :BC];
+outp = [gbox, ebox, abcbox];
+outSymb = [:G1, :E1, :ABC];
 outF = Symbol[];
 	for i = 1:length(outp)
 		if outp[i]
@@ -1075,7 +1080,7 @@ end
 
 
 # ╔═╡ 6b819b32-3601-48cc-9ff4-1df3e88e8034
-uwd = multisplit_uwd(inpF, :ABC);
+uwd = multisplit_uwd(inpF, outF);
 
 # ╔═╡ 0858af84-9c5c-43b4-b5c9-fec1f1c4dba4
 begin
